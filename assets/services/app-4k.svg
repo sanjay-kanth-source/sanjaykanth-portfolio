@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0a1830"/><stop offset=".55" stop-color="#07111f"/><stop offset="1" stop-color="#02050b"/></linearGradient><radialGradient id="orb"><stop stop-color="#00c2ff" stop-opacity=".75"/><stop offset="1" stop-color="#00c2ff" stop-opacity="0"/></radialGradient><filter id="glow"><feGaussianBlur stdDeviation="35" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<rect width="3840" height="2160" fill="url(#bg)"/><circle cx="2920" cy="560" r="760" fill="url(#orb)"/><circle cx="900" cy="1720" r="620" fill="url(#orb)" opacity=".35"/>
+<g fill="none" stroke-linecap="round" opacity=".72"><path d="M-100 1600 C 700 700, 1250 2050, 2150 1120 S 3300 500, 4000 1150" stroke="#00c2ff" stroke-width="26"/><path d="M-200 1800 C 700 900, 1400 2150, 2300 1280 S 3350 720, 4050 1350" stroke="#7b61ff" stroke-width="11"/><path d="M-100 1380 C 800 580, 1300 1700, 2200 980 S 3200 420, 4000 980" stroke="#ffffff" stroke-opacity=".28" stroke-width="5"/></g>
+<g filter="url(#glow)"><circle cx="2860" cy="1080" r="300" fill="none" stroke="#7b61ff" stroke-width="14" opacity=".6"/><circle cx="2860" cy="1080" r="220" fill="none" stroke="#00c2ff" stroke-width="7" opacity=".8"/></g>
+<text x="2860" y="1165" text-anchor="middle" font-family="Arial,sans-serif" font-size="330" font-weight="700" fill="#fff" opacity=".96">APP</text>
+<text x="190" y="270" font-family="Arial,sans-serif" font-size="88" font-weight="700" fill="#fff" opacity=".9">App Creation</text>
+<text x="190" y="410" font-family="Arial,sans-serif" font-size="54" fill="#dbeafe" opacity=".8">Mobile • Web • UI</text>
+</svg>
