@@ -1,1 +1,169 @@
-const path=require('path');const fs=require('fs');const express=require('express');const helmet=require('helmet');const rateLimit=require('express-rate-limit');require('dotenv').config();const app=express();const PORT=process.env.PORT||3000;const BACKUP_DIR=path.join(__dirname,'data');const BACKUP_FILE=path.join(BACKUP_DIR,'enquiries.json');fs.mkdirSync(BACKUP_DIR,{recursive:true});app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:'100kb'}));app.use(express.urlencoded({extended:true,limit:'100kb'}));app.use(express.static(__dirname));const limiter=rateLimit({windowMs:15*60*1000,limit:20,standardHeaders:true,legacyHeaders:false});function clean(v,max=4000){return String(v??'').trim().slice(0,max)}function emailOk(v){return !v||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}function phoneOk(v){return v.replace(/\D/g,'').length>=10}function backup(row){let a=[];try{a=JSON.parse(fs.readFileSync(BACKUP_FILE,'utf8'));if(!Array.isArray(a))a=[]}catch{}a.push(row);fs.writeFileSync(BACKUP_FILE,JSON.stringify(a,null,2))}app.post('/api/enquiries',limiter,async(req,res)=>{const b=req.body||{};if(clean(b.website))return res.status(400).json({success:false,error:'Spam submission blocked.'});const row={timestamp:new Date().toISOString(),source:clean(b.source||'Website',80),name:clean(b.name,120),email:clean(b.email,160),phone:clean(b.phone,60),service:clean(b.service,160),message:clean(b.message),status:'New'};if(!row.name)return res.status(400).json({success:false,error:'Please enter your name.'});if(!phoneOk(row.phone))return res.status(400).json({success:false,error:'Please enter a valid phone number.'});if(!row.message)return res.status(400).json({success:false,error:'Please enter your project details.'});if(!emailOk(row.email))return res.status(400).json({success:false,error:'Please enter a valid email address.'});backup(row);const url=process.env.GOOGLE_APPS_SCRIPT_URL;if(!url)return res.status(503).json({success:false,error:'Google Sheets is not configured. The enquiry was saved locally.'});try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)});const text=await r.text();let out;try{out=JSON.parse(text)}catch{out={success:r.ok,message:text}}if(!r.ok||out.success===false)return res.status(502).json({success:false,error:out.error||out.message||'Google Sheets submission failed.'});res.json({success:true,message:'Enquiry submitted successfully.'})}catch(e){console.error(e);res.status(502).json({success:false,error:'Google Sheets connection failed. The enquiry was saved locally.'})}});app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'code.html')));app.listen(PORT,()=>console.log(`Sanjay Kanth portfolio running at http://localhost:${PORT}`));
+const path = require('path');
+const fs = require('fs');
+const express = require('express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const BACKUP_DIR = '/tmp';
+const BACKUP_FILE = path.join(BACKUP_DIR, 'enquiries.json');
+
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+app.use(express.static(__dirname));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+function clean(v, max = 4000) {
+  return String(v ?? '').trim().slice(0, max);
+}
+
+function emailOk(v) {
+  return !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+function phoneOk(v) {
+  return v.replace(/\D/g, '').length >= 10;
+}
+
+function backup(row) {
+  let a = [];
+
+  try {
+    a = JSON.parse(fs.readFileSync(BACKUP_FILE, 'utf8'));
+    if (!Array.isArray(a)) a = [];
+  } catch {}
+
+  a.push(row);
+
+  try {
+    fs.writeFileSync(BACKUP_FILE, JSON.stringify(a, null, 2));
+  } catch (e) {
+    console.error('Local backup unavailable:', e.message);
+  }
+}
+
+app.post('/api/enquiries', limiter, async (req, res) => {
+  const b = req.body || {};
+
+  if (clean(b.website)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Spam submission blocked.'
+    });
+  }
+
+  const row = {
+    timestamp: new Date().toISOString(),
+    source: clean(b.source || 'Website', 80),
+    name: clean(b.name, 120),
+    email: clean(b.email, 160),
+    phone: clean(b.phone, 60),
+    service: clean(b.service, 160),
+    message: clean(b.message),
+    status: 'New'
+  };
+
+  if (!row.name) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please enter your name.'
+    });
+  }
+
+  if (!phoneOk(row.phone)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please enter a valid phone number.'
+    });
+  }
+
+  if (!row.message) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please enter your project details.'
+    });
+  }
+
+  if (!emailOk(row.email)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please enter a valid email address.'
+    });
+  }
+
+  backup(row);
+
+  const url = process.env.GOOGLE_APPS_SCRIPT_URL;
+
+  if (!url) {
+    return res.status(503).json({
+      success: false,
+      error: 'Google Sheets is not configured. The enquiry was saved locally.'
+    });
+  }
+
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(row)
+    });
+
+    const text = await r.text();
+
+    let out;
+
+    try {
+      out = JSON.parse(text);
+    } catch {
+      out = {
+        success: r.ok,
+        message: text
+      };
+    }
+
+    if (!r.ok || out.success === false) {
+      return res.status(502).json({
+        success: false,
+        error:
+          out.error ||
+          out.message ||
+          'Google Sheets submission failed.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Enquiry submitted successfully.'
+    });
+
+  } catch (e) {
+    console.error(e);
+
+    return res.status(502).json({
+      success: false,
+      error:
+        'Google Sheets connection failed. The enquiry was saved locally.'
+    });
+  }
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'code.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(
+    `Sanjay Kanth portfolio running at http://localhost:${PORT}`
+  );
+});
